@@ -1,0 +1,50 @@
+---
+- name: Déployer Apache et MariaDB
+  hosts: webservers
+  become: true
+  tasks:
+    - name: Installer Apache
+      apt:
+        name: apache2
+        state: present
+        update_cache: yes
+
+    - name: Démarrer Apache
+      service:
+        name: apache2
+        state: started
+        enabled: yes
+
+    - name: Installer MariaDB
+      apt:
+        name: mariadb-server
+        state: present
+        update_cache: yes
+
+    - name: Démarrer MariaDB
+      service:
+        name: mysql  # Le service de MariaDB porte aussi le nom mysql
+        state: started
+        enabled: yes
+
+    - name: Créer une base de données
+      mysql_db:
+        name: app_db
+        state: present
+        login_user: root
+        login_password: "{{ db_password }}"
+
+    - name: Créer un utilisateur MariaDB
+      mysql_user:
+        name: app_user
+        password: "{{ db_password }}"
+        priv: "app_db.*:ALL"
+        state: present
+        login_user: root
+        login_password: "{{ db_password }}"
+
+    - name: Déployer l'application PHP
+      copy:
+        src: ./app.php
+        dest: /var/www/html/app.php
+        mode: '0644'
